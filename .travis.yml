@@ -13,12 +13,5 @@ script:
 
 branches:
   only:
-    devel
-    tesla
-    tesla_sr
-    release2
-
-branches:
-  only:
   - tesla_sr
   - /.*/
