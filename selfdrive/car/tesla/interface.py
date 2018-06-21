@@ -157,8 +157,8 @@ class CarInterface(object):
     ret.steerRatioRear = 0.
 
     # no max steer limit VS speed
-    ret.steerMaxBP = [0.]  # m/s
-    ret.steerMaxV = [1.]   # max steer allowed
+    ret.steerMaxBP = [0, 16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # Decrease steering rate of change w/ speed
+    ret.steerMaxV = [2.5, 2.25, 2.]  
 
     ret.gasMaxBP = [0.]  # m/s
     ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
