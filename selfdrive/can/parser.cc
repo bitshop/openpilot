@@ -64,6 +64,17 @@ uint64_t read_u64_be(const uint8_t* v) {
           | (uint64_t)v[7]);
 }
 
+uint64_t read_u64_le(const uint8_t* v) {
+  return ((uint64_t)v[0]
+          | ((uint64_t)v[1] << 8)
+          | ((uint64_t)v[2] << 16)
+          | ((uint64_t)v[3] << 24)
+          | ((uint64_t)v[4] << 32)
+          | ((uint64_t)v[5] << 40)
+          | ((uint64_t)v[6] << 48)
+          | ((uint64_t)v[7] << 56));
+}
+
 
 struct MessageState {
   uint32_t address;
@@ -82,8 +93,14 @@ struct MessageState {
   bool parse(uint64_t sec, uint16_t ts_, uint64_t dat) {
     for (int i=0; i < parse_sigs.size(); i++) {
       auto& sig = parse_sigs[i];
+      int64_t tmp;
 
-      int64_t tmp = (dat >> sig.bo) & ((1ULL << sig.b2)-1);
+      if (sig.is_little_endian){
+        tmp = (dat >> sig.b1) & ((1ULL << sig.b2)-1);
+      } else {
+        tmp = (dat >> sig.bo) & ((1ULL << sig.b2)-1);
+      }
+
       if (sig.is_signed) {
         tmp -= (tmp >> (sig.b2-1)) ? (1ULL << sig.b2) : 0; //signed
       }
@@ -142,18 +159,23 @@ class CANParser {
   CANParser(int abus, const std::string& dbc_name,
             const std::vector<MessageParseOptions> &options,
             const std::vector<SignalParseOptions> &sigoptions,
-            bool sendcan)
+            bool sendcan, const std::string& tcp_addr)
     : bus(abus) {
     // connect to can on 8006
     context = zmq_ctx_new();
     subscriber = zmq_socket(context, ZMQ_SUB);
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
 
+    std::string tcp_addr_str;
+
     if (sendcan) {
-      zmq_connect(subscriber, "tcp://127.0.0.1:8017");
+      tcp_addr_str = "tcp://" + tcp_addr + ":8017";
     } else {
-      zmq_connect(subscriber, "tcp://127.0.0.1:8006");
+      tcp_addr_str = "tcp://" + tcp_addr + ":8006";
     }
+    const char *tcp_addr_char = tcp_addr_str.c_str();
+
+    zmq_connect(subscriber, tcp_addr_char);
 
     dbc = dbc_lookup(dbc_name);
     assert(dbc);
@@ -215,6 +237,7 @@ class CANParser {
 
   void UpdateCans(uint64_t sec, const capnp::List<cereal::CanData>::Reader& cans) {
       int msg_count = cans.size();
+      uint64_t p;
 
       DEBUG("got %d messages\n", msg_count);
 
@@ -235,7 +258,13 @@ class CANParser {
         uint8_t dat[8] = {0};
         memcpy(dat, cmsg.getDat().begin(), cmsg.getDat().size());
 
-        uint64_t p = read_u64_be(dat);
+        // Assumes all signals in the message are of the same type (little or big endian)
+        auto& sig = message_states[cmsg.getAddress()].parse_sigs[0];
+        if (sig.is_little_endian) {
+            p = read_u64_le(dat);
+        } else {
+            p = read_u64_be(dat);
+        }
 
         DEBUG("  proc %X: %llx\n", cmsg.getAddress(), p);
 
@@ -289,6 +318,7 @@ class CANParser {
 
     UpdateValid(sec);
 
+    zmq_msg_close(&msg);
   }
 
   std::vector<SignalValue> query(uint64_t sec) {
@@ -331,12 +361,12 @@ extern "C" {
 void* can_init(int bus, const char* dbc_name,
                size_t num_message_options, const MessageParseOptions* message_options,
                size_t num_signal_options, const SignalParseOptions* signal_options,
-               bool sendcan) {
+               bool sendcan, const char* tcp_addr) {
   CANParser* ret = new CANParser(bus, std::string(dbc_name),
                                  (message_options ? std::vector<MessageParseOptions>(message_options, message_options+num_message_options)
                                   : std::vector<MessageParseOptions>{}),
                                  (signal_options ? std::vector<SignalParseOptions>(signal_options, signal_options+num_signal_options)
-                                  : std::vector<SignalParseOptions>{}), sendcan);
+                                  : std::vector<SignalParseOptions>{}), sendcan, std::string(tcp_addr));
   return (void*)ret;
 }
 

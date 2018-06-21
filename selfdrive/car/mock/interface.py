@@ -25,6 +25,7 @@ class CarInterface(object):
     self.gps = messaging.sub_sock(context, service_list['gpsLocation'].port)
 
     self.speed = 0.
+    self.prev_speed = 0.
     self.yaw_rate = 0.
     self.yaw_rate_meas = 0.
 
@@ -70,6 +71,7 @@ class CarInterface(object):
     ret.longitudinalKpV = [0.]
     ret.longitudinalKiBP = [0.]
     ret.longitudinalKiV = [0.]
+    ret.steerActuatorDelay = 0.
 
     return ret
 
@@ -85,6 +87,7 @@ class CarInterface(object):
 
     gps = messaging.recv_sock(self.gps)
     if gps is not None:
+      self.prev_speed = self.speed
       self.speed = gps.gpsLocation.speed
 
     # create message
@@ -93,7 +96,11 @@ class CarInterface(object):
     # speeds
     ret.vEgo = self.speed
     ret.vEgoRaw = self.speed
-    ret.aEgo = 0.
+    a = self.speed - self.prev_speed
+
+    ret.aEgo = a
+    ret.brakePressed = a < -0.5
+
     self.yawRate = LPG * self.yaw_rate_meas + (1. - LPG) * self.yaw_rate
     ret.yawRate = self.yaw_rate
     ret.standstill = self.speed < 0.01

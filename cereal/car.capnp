@@ -1,7 +1,7 @@
-using Cxx = import "c++.capnp";
+using Cxx = import "./include/c++.capnp";
 $Cxx.namespace("cereal");
 
-using Java = import "java.capnp";
+using Java = import "./include/java.capnp";
 $Java.package("ai.comma.openpilot.cereal");
 $Java.outerClassname("Car");
 
@@ -54,6 +54,11 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     parkBrake @29;
     manualRestart @30;
     lowSpeedLockout @31;
+    plannerError @32;
+    ipasOverride @33;
+    debugAlert @34;
+    steerTempUnavailableMute @35;
+    resumeRequired @36;
   }
 }
 
@@ -191,6 +196,7 @@ struct RadarState {
 struct CarControl {
   # must be true for any actuator commands to work
   enabled @0 :Bool;
+  active @7 :Bool;
 
   gasDEPRECATED @1 :Float32;
   brakeDEPRECATED @2 :Float32;
@@ -207,6 +213,7 @@ struct CarControl {
     brake @1: Float32;
     # range from -1.0 - 1.0
     steer @2: Float32;
+    steerAngle @3: Float32;
   }
 
   struct CruiseControl {
@@ -258,9 +265,9 @@ struct CarParams {
   radarNameDEPRECATED @1 :Text;
   carFingerprint @2 :Text;
 
-  enableSteer @3 :Bool;
-  enableGas @4 :Bool;
-  enableBrake @5 :Bool;
+  enableSteerDEPRECATED @3 :Bool;
+  enableGasInterceptor @4 :Bool;
+  enableBrakeDEPRECATED @5 :Bool;
   enableCruise @6 :Bool;
   enableCamera @26 :Bool;
   enableDsu @27 :Bool; # driving support unit
@@ -286,6 +293,10 @@ struct CarParams {
     honda @1;
     toyota @2;
     elm327 @3;
+    gm @4;
+    hondaBosch @5;
+    ford @6;
+    cadillac @7;
   }
 
   # things about the car in the manual
@@ -301,8 +312,12 @@ struct CarParams {
   tireStiffnessRear @14 :Float32;    # [N/rad] rear tire coeff of stiff
 
   # Kp and Ki for the lateral control
-  steerKp @15 :Float32;
-  steerKi @16 :Float32;
+  steerKpBP @42 :List(Float32);
+  steerKpV @43 :List(Float32);
+  steerKiBP @44 :List(Float32);
+  steerKiV @45 :List(Float32);
+  steerKpDEPRECATED @15 :Float32;
+  steerKiDEPRECATED @16 :Float32;
   steerKf @25 :Float32;
 
   # Kp and Ki for the longitudinal control
@@ -318,4 +333,13 @@ struct CarParams {
   stoppingControl @34 :Bool; # Does the car allows full control even at lows speeds when stopping
   startAccel @35 :Float32; # Required acceleraton to overcome creep braking
   steerRateCost @40 :Float32; # Lateral MPC cost on steering rate
+  steerControlType @46 :SteerControlType;
+  radarOffCan @47 :Bool; # True when radar objects aren't visible on CAN
+
+  steerActuatorDelay @48 :Float32; # Steering wheel actuator delay in seconds
+
+  enum SteerControlType {
+    torque @0;
+    angle @1;
+  }
 }

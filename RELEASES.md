@@ -1,3 +1,72 @@
+Version 0.4.7.1 (2018-06-18)
+==========================
+ * Fix Acura ILX steer faults
+ * Fix bug in mock car
+
+Version 0.4.7 (2018-06-15)
+==========================
+ * New model!
+ * GM Volt (and CT6 lateral) support!
+ * Honda Bosch lateral support!
+ * Improve actuator modeling to reduce lateral wobble
+ * Minor refactor of car abstraction layer
+ * Hack around orbd startup issue
+
+Version 0.4.6 (2018-05-18)
+==========================
+ * NEOSv6 required! Will autoupdate
+ * Stability improvements
+ * Fix all memory leaks
+ * Update C++ compiler to clang6
+ * Improve front camera exposure
+
+Version 0.4.5 (2018-04-27)
+==========================
+ * Release notes added to the update popup
+ * Improve auto shut-off logic to disallow empty battery
+ * Added onboarding instructions
+ * Include orbd, the first piece of new calibration algorithm
+ * Show remaining upload data instead of file numbers
+ * Fix UI bugs
+ * Fix memory leaks
+
+Version 0.4.4 (2018-04-13)
+==========================
+ * EON are flipped! Flip your EON's mount!
+ * Alpha Honda Ridgeline support thanks to energee!
+ * Support optional front camera recording
+ * Upload over cellular toggle now applies to all files, not just video
+ * Increase acceleration when closing lead gap
+ * User now prompted for future updates
+ * NEO no longer supported :(
+
+Version 0.4.3.2 (2018-03-29)
+============================
+ * Improve autofocus
+ * Improve driving when only one lane line is detected
+ * Added fingerprint for Toyota Corolla LE
+ * Fixed Toyota Corolla steer error
+ * Full-screen driving UI
+ * Improved path drawing
+
+Version 0.4.3.1 (2018-03-19)
+============================
+ * Improve autofocus
+ * Add check for MPC solution error
+ * Make first distracted warning visual only
+
+Version 0.4.3 (2018-03-13)
+==========================
+ * Add HDR and autofocus
+ * Update UI aesthetic
+ * Grey panda works in Waze
+ * Add alpha support for 2017 Honda Pilot
+ * Slight increase in acceleration response from stop
+ * Switch CAN sending to use CANPacker
+ * Fix pulsing acceleration regression on Honda
+ * Fix openpilot bugs when stock system is in use
+ * Change starting logic for chffrplus to use battery voltage
+
 Version 0.4.2 (2018-02-05)
 ==========================
  * Add alpha support for 2017 Lexus RX Hybrid

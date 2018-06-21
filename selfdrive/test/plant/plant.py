@@ -12,11 +12,11 @@ from selfdrive.config import Conversions as CV
 import selfdrive.messaging as messaging
 from selfdrive.services import service_list
 from selfdrive.car.honda.hondacan import fix
-from common.fingerprints import HONDA as CAR
+from selfdrive.car.honda.values import CAR
 from selfdrive.car.honda.carstate import get_can_signals
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 
-from selfdrive.car.honda.old_can_parser import CANParser
+from selfdrive.can.plant_can_parser import CANParser
 from selfdrive.car.honda.interface import CarInterface
 
 from common.dbc import dbc
@@ -36,7 +36,7 @@ def car_plant(pos, speed, grade, gas, brake):
   speed_base = power_peak/force_peak
   rolling_res = 0.01
   g = 9.81
-  #frontal_area = 2.2  TODO: use it!
+  frontal_area = 2.2
   air_density = 1.225
   gas_to_peak_linear_slope = 3.33
   brake_to_peak_linear_slope = 0.3
@@ -56,7 +56,7 @@ def car_plant(pos, speed, grade, gas, brake):
   creep_accel = np.interp(speed, creep_accel_bp, creep_accel_v)
   force_creep = creep_accel * mass
 
-  force_resistance = -(rolling_res * mass * g + 0.5 * speed**2 * aero_cd * air_density)
+  force_resistance = -(rolling_res * mass * g + 0.5 * speed**2 * aero_cd * air_density * frontal_area)
   force = force_gas + force_brake + force_resistance + force_grade + force_creep
   acceleration = force / mass
 
@@ -90,7 +90,6 @@ class Plant(object):
 
   def __init__(self, lead_relevancy=False, rate=100, speed=0.0, distance_lead=2.0):
     self.rate = rate
-    self.brake_only = False
 
     if not Plant.messaging_initialized:
       context = zmq.Context()
@@ -146,7 +145,7 @@ class Plant(object):
     return float(self.rk.frame) / self.rate
 
   def step(self, v_lead=0.0, cruise_buttons=None, grade=0.0, publish_model = True):
-    gen_dbc, gen_signals, gen_checks = get_can_signals(CP)
+    gen_signals, gen_checks = get_can_signals(CP)
     sgs = [s[0] for s in gen_signals]
     msgs = [s[1] for s in gen_signals]
     cks_msgs = set(check[0] for check in gen_checks)
@@ -170,7 +169,7 @@ class Plant(object):
         fcw = True
 
     if self.cp.vl[0x1fa]['COMPUTER_BRAKE_REQUEST']:
-      brake = self.cp.vl[0x1fa]['COMPUTER_BRAKE']
+      brake = self.cp.vl[0x1fa]['COMPUTER_BRAKE'] * 0.003906248
     else:
       brake = 0.0
 
@@ -211,15 +210,13 @@ class Plant(object):
       print "%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel)
 
     # ******** publish the car ********
+    # TODO: the order is this list should not matter, but currently everytime we change carstate we break this test. Fix it!
     vls = [self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
            self.angle_steer, self.angle_steer_rate, 0,
-           0, 0, 0, 0,  # Doors
            0, 0,  # Blinkers
-           0,  # Cruise speed offset
            self.gear_choice,
            speed != 0,
            self.brake_error, self.brake_error,
-           self.v_cruise,
            not self.seatbelt, self.seatbelt,  # Seatbelt
            self.brake_pressed, 0.,
            cruise_buttons,
@@ -231,12 +228,20 @@ class Plant(object):
            self.pedal_gas,
            self.cruise_setting,
            self.acc_status,
+
+           self.v_cruise,
+           0,  # Cruise speed offset
+
+           0, 0, 0, 0,  # Doors
+
            self.user_gas,
            self.main_on,
            0,  # EPB State
            0,  # Brake hold
            0,  # Interceptor feedback
            # 0,
+
+
     ]
 
     # TODO: publish each message at proper frequency
