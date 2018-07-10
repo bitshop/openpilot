@@ -284,6 +284,8 @@ class CarInterface(object):
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
 
+    ret.steerLimitAlert = False
+
     # events
     # TODO: I don't like the way capnp does enums
     # These strings aren't checked at compile time
@@ -295,9 +297,9 @@ class CarInterface(object):
     else:
       self.can_invalid_count = 0
     if self.CS.steer_error:
-      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      ret.steerLimitAlert = True
     elif self.CS.steer_warning:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      ret.steerLimitAlert = True
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if not ret.gearShifter == 'drive':
@@ -317,7 +319,8 @@ class CarInterface(object):
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.steer_override:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      ret.steerLimitAlert = True
+
 
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
