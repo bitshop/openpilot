@@ -4,6 +4,7 @@ from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.tesla.values import CAR, DBC
 import numpy as np
+from ctypes import create_string_buffer
 
 
 def parse_gear_shifter(can_gear_shifter, car_fingerprint):
