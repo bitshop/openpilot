@@ -113,6 +113,7 @@ class CarInterface(object):
     tireStiffnessRear_models = 90000
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+    ret.enableDsu = True
     if candidate == CAR.MODELS:
       stop_and_go = True
       ret.mass = mass_models
