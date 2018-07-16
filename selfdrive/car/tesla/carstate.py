@@ -141,7 +141,7 @@ class CarState(object):
     self.right_blinker_on = 0
     self.steer_warning = 0
     # TODO - Replace with a default value:
-    self.last_cruise_message = ""
+    self.last_cruise_message = create_string_buffer(8) #   msg_len = 8
     
     self.stopped = 0
     self.frame_humanSteered = 0    # Last frame human steered

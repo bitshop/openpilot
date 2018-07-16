@@ -73,6 +73,7 @@ def create_cruise_adjust_msg(spdCtrlLvr_stat, idx, lastStalkMsg):
   msg_id = 0x045  # 69 in hex, STW_ACTN_RQ
   msg_len = 8
   msg = create_string_buffer(msg_len)
+  print "lastStalkMsg[0] = " + format(lastStalkMsg[0], '02x')
   b0 = ( lastStalkMsg[0] & 0xC0 ) + spdCtrlLvr_stat # 2 is to set the VSL_Enbl_Rq as 1
   struct.pack_into('BBBBBBB', msg, 0, b0, lastStalkMsg[1], lastStalkMsg[2], lastStalkMsg[3], lastStalkMsg[4],
        lastStalkMsg[5], (lastStalkMsg[6] & 0x0F) + (idx << 4))
